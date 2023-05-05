@@ -1,6 +1,7 @@
 from concurrent import futures
 import random
 import mine_grpc_pb2_grpc
+import mine_grpc_pb2
 import hashlib
 import grpc
 import threading
@@ -17,68 +18,77 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
         if(id <= max(self.transactions.keys())):
             return True
         return False
-
-    def getTransactionId(self):
-        return max(self.transactions.keys())
-    
-    def getChallenge(self, transactionId):
-        if(self._validTrId(transactionId)):
-            return self.transactions[transactionId]['challenge']
+    def _getLocalStatus(self, id):
+        if(self._validTrId(id)):
+            if(self.transactions[id]['solution'] != None):
+                return 0
+            return 1
         return -1
+
+    def getTransactionId(self, request, context):
+        return mine_grpc_pb2.intResult(result=(max(self.transactions.keys())))
     
-    def getTransactionStatus(self, transactionId):
+    def getChallenge(self, request, context):
+        transactionId = request.transactionId
+        if(self._validTrId(transactionId)):
+            return mine_grpc_pb2.intResult(result=(self.transactions[transactionId]['challenge']))
+        return mine_grpc_pb2.intResult(result=(-1))
+    
+    def getTransactionStatus(self, request, context):
+        transactionId = request.transactionId
         if(self._validTrId(transactionId)):
             if(self.transactions[transactionId]['solution'] != None):
-                return 0
-            return 1
-        return -1
+                return mine_grpc_pb2.intResult(result=(0))
+            return mine_grpc_pb2.intResult(result=(1))
+        return mine_grpc_pb2.intResult(result=(-1))
     
-    def submitChallenge(self, challengeArgs):
-        if self.getTransactionStatus(challengeArgs.transactionId) == 0:
-            return 2
-        if self.getTransactionStatus(challengeArgs.transactionId) == -1:
-            return -1
+    def submitChallenge(self, request, context):
+        transactionId = request.transactionId
+        if self._getLocalStatus(transactionId) == 0:
+            return mine_grpc_pb2.intResult(result=(2))
+        if self._getLocalStatus(transactionId) == -1:
+            return mine_grpc_pb2.intResult(result=(-1))
         
-        sha1 = hashlib.sha1()
-        sha1.update(challengeArgs.solution.encode('utf-8'))
 
-        hash_digest = sha1.hexdigest()
-        binary_hash = bin(int(hash_digest, 16))[2:]
-        # print(binary_hash[1:6])
+        hash_object = hashlib.sha1()
+        hash_object.update(request.solution.encode('utf-8'))
+        hash_str = hash_object.hexdigest()
+        hash_bin = bin(int(hash_str, 16))[2:]
+        nBits = hash_bin[1:self.transactions[transactionId]['challenge']+1]
 
-        #fugindo do primerio bit sempre == 1
-        if binary_hash[1:self.getChallenge(challengeArgs.transactionId)+1] == '0' * self.getChallenge(challengeArgs.transactionId):
-            self.transactions[challengeArgs.transactionId]['winner'] = challengeArgs.clientId
-            self.transactions[challengeArgs.transactionId]['solution'] = challengeArgs.solution
+        print(request.solution)
+        print(nBits)
+        if nBits == '0'* self.transactions[transactionId]['challenge']:
+            self.transactions[transactionId]['winner'] = request.clientId
+            self.transactions[transactionId]['solution'] = request.solution
 
-            #com duvida se esta criando da maneira correta
-            self.transactions[challengeArgs.transactionId+1] = {'challenge': random.randint(1, 6), 'solution': None, 'winner': -1} # criando novo desafio
-            return 1
+            self.transactions[transactionId+1] = {'challenge': random.randint(1, 6), 'solution': None, 'winner': -1} # criando novo desafio
+            return mine_grpc_pb2.intResult(result=(1))
         else:
-            return 0
+            return mine_grpc_pb2.intResult(result=(0))
     
-    def getWinner(self,transactionId):
+    def getWinner(self, request, context):
+        transactionId = request.transactionId
         if self._validTrId(transactionId):
-            if self.transactions[transactionId]['solution'] == None:
-                return 0
-            return 1
+            if self.transactions[transactionId]['winner'] == -1:
+                return mine_grpc_pb2.intResult(result=(0))
+            return mine_grpc_pb2.intResult(result=(self.transactions[transactionId]['winner']))
         
-        return -1
+        return mine_grpc_pb2.intResult(result=(-1))
     
-    def getSolution(self, transactionId):
+    def getSolution(self, request, context):
+        transactionId = request.transactionId
+
         if self._validTrId(transactionId):
-            return {'status': self.getTransactionStatus(transactionId), 'solution': self.transactions[transactionId]['solution'], 'challenge': self.getChallenge(transactionId)}
-        return 'Invalid transactionId!'
+            return mine_grpc_pb2.structResult(status=(self._getLocalStatus(transactionId)), solution=(str(self.transactions[transactionId]['solution'])), challenge=(self.transactions[transactionId]['challenge']))
+        
+        return mine_grpc_pb2.structResult(status=(-1), solution=("-1"), challenge=(-1)) 
     
     def _printTransactions(self):
         print("-------------------------------- Transactions Table --------------------------------")
         for i in self.transactions:
-            print(self.getSolution(i))
+            print(f"Challenge: {self.transactions[i]['challenge']} | Solution: {self.transactions[i]['solution']} | Winner: {self.transactions[i]['winner']}")
         print()
-
-    #test
-    def _insertCh(self, tam):
-        self.transactions[tam+1] = {'challenge': random.randint(1, 6), 'solution': None, 'winner': -1} # criando novo desafio
 
 
 if __name__ == '__main__':
@@ -89,11 +99,9 @@ if __name__ == '__main__':
     grpc_server.add_insecure_port('[::]:8080')
     grpc_server.start()
 
-    ## test
-    thread_print = threading.Thread(target=aux.sleepFive, args=(server, ))
-    thread_answer = threading.Thread(target=aux.lookForAnswer, args=(server, ))
-    thread_answer.start()
-    thread_print.start()
-    ##
+    # ## test
+    # thread_print = threading.Thread(target=aux.sleepFive, args=(server, ))
+    # thread_print.start()
+    # ##
 
     grpc_server.wait_for_termination()

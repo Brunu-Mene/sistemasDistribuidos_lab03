@@ -1,6 +1,7 @@
 import time
 import random
 import string
+import hashlib
 
 class challengeArgs:
     def __init__(self, transactionId, clientId, solution):
@@ -13,15 +14,17 @@ def sleepFive(server):
         server._printTransactions()
         time.sleep(5)
 
-def lookForAnswer(server):
-    id = 0
+def lookForAnswer(challenger):
+    hash_object = hashlib.sha1()
 
     while True:
-        time.sleep(0.9)
         solution = ''.join(random.choices(string.ascii_letters + string.digits, k=15))
 
-        chall = challengeArgs(transactionId = id, clientId = 0, solution=solution)
-        if server.submitChallenge(chall) == 1:
-            id += 1
-        elif server.submitChallenge(chall) == -1:
-            break
+        hash_object.update(solution.encode('utf-8'))
+        hash_str = hash_object.hexdigest()
+        hash_bin = bin(int(hash_str, 16))[2:]
+        nBits = hash_bin[1:challenger+1]
+
+        if nBits == '0'* challenger:
+            print(nBits)
+            return solution
