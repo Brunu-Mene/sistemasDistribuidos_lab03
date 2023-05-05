@@ -2,12 +2,11 @@ from concurrent import futures
 import random
 import mine_grpc_pb2_grpc
 import hashlib
+import grpc
+import threading
+import aux
 
-class challengeArgs:
-    def __init__(self, transactionId, clientId, solution):
-        self.transactionId = transactionId
-        self.clientId = clientId
-        self.solution = solution
+
 
 class MineServer(mine_grpc_pb2_grpc.apiServicer):
     def __init__(self):
@@ -45,11 +44,15 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
 
         hash_digest = sha1.hexdigest()
         binary_hash = bin(int(hash_digest, 16))[2:]
-        print(binary_hash[:10])
+        # print(binary_hash[1:6])
 
-        if binary_hash[:self.getChallenge(challengeArgs.transactionId)['challenge']] == '0' * self.getChallenge(challengeArgs.transactionId):
+        #fugindo do primerio bit sempre == 1
+        if binary_hash[1:self.getChallenge(challengeArgs.transactionId)+1] == '0' * self.getChallenge(challengeArgs.transactionId):
             self.transactions[challengeArgs.transactionId]['winner'] = challengeArgs.clientId
             self.transactions[challengeArgs.transactionId]['solution'] = challengeArgs.solution
+
+            #com duvida se esta criando da maneira correta
+            self.transactions[challengeArgs.transactionId+1] = {'challenge': random.randint(1, 6), 'solution': None, 'winner': -1} # criando novo desafio
             return 1
         else:
             return 0
@@ -66,11 +69,31 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
         if self._validTrId(transactionId):
             return {'status': self.getTransactionStatus(transactionId), 'solution': self.transactions[transactionId]['solution'], 'challenge': self.getChallenge(transactionId)}
         return 'Invalid transactionId!'
+    
+    def _printTransactions(self):
+        print("-------------------------------- Transactions Table --------------------------------")
+        for i in self.transactions:
+            print(self.getSolution(i))
+        print()
+
+    #test
+    def _insertCh(self, tam):
+        self.transactions[tam+1] = {'challenge': random.randint(1, 6), 'solution': None, 'winner': -1} # criando novo desafio
 
 
 if __name__ == '__main__':
     server = MineServer()
-    ch = challengeArgs(solution = "test", clientId = 0, transactionId = 0)
-    print(server.getSolution(0))
+    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    mine_grpc_pb2_grpc.add_apiServicer_to_server(server, grpc_server)
 
-    # while(1):
+    grpc_server.add_insecure_port('[::]:8080')
+    grpc_server.start()
+
+    ## test
+    thread_print = threading.Thread(target=aux.sleepFive, args=(server, ))
+    thread_answer = threading.Thread(target=aux.lookForAnswer, args=(server, ))
+    thread_answer.start()
+    thread_print.start()
+    ##
+
+    grpc_server.wait_for_termination()
