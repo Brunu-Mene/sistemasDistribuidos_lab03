@@ -51,9 +51,8 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
         
         hash = hashlib.sha1(request.solution.encode('utf-8')).digest()
         binary_hash = bin(int.from_bytes(hash, byteorder='big'))[2:]
-        print(binary_hash[:10])
 
-        if binary_hash[:self.transactions[transactionId]['challenge']]:
+        if binary_hash[1:self.transactions[transactionId]['challenge']+1] == '0' * self.transactions[transactionId]['challenge']:
             self.transactions[transactionId]['winner'] = request.clientId
             self.transactions[transactionId]['solution'] = request.solution
 

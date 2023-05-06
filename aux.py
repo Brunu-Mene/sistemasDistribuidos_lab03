@@ -16,11 +16,10 @@ def sleepFive(server):
 
 def lookForAnswer(challenger):
     while True:
-        solution = ''.join(random.choices(string.ascii_letters + string.digits, k=50))
+        solution = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
         hash = hashlib.sha1(solution.encode('utf-8')).digest()
 
         binary_hash = bin(int.from_bytes(hash, byteorder='big'))[2:]
 
-        if binary_hash[:challenger]:
-            print(hash[:10])
+        if binary_hash[1:challenger+1] == '0' * challenger:
             return solution
