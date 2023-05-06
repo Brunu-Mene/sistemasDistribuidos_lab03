@@ -52,14 +52,12 @@ def runOperation(client, operation, clientId):
             transactionId = client.getTransactionId(mine_grpc_pb2.void()).result
             ch = client.getChallenge(mine_grpc_pb2.transactionId(transactionId = int(transactionId))).result
             if validTransaction(ch):
-                # thread_answer = threading.Thread(target=aux.lookForAnswer, args=(ch, ))
-                # solution = thread_answer.start()
                 solution = aux.lookForAnswer(ch)
 
                 result = client.submitChallenge(mine_grpc_pb2.challengeArgs(transactionId = int(transactionId), clientId=(clientId), solution=(solution))).result
                 print(f"Local Solution: {solution}")
                 if result == 1:
-                    print(f"Solution worked!")
+                    print(f"Solution worked $$$")
                 elif result == 0:
                     print("Denied Solution by Server! :(")
                 elif result == 2:
@@ -71,8 +69,13 @@ def runOperation(client, operation, clientId):
 
 @breaker
 def connect():
-    clientId = random.randint(0, 1000000)
-    serverAndress = sys.argv[1]
+    clientId = random.randint(1, (2**31)-1)
+
+    try:
+        serverAndress = sys.argv[1]
+    except IOError:
+        print("Missing argument! Server Address...")
+        exit()
 
     channel = grpc.insecure_channel(serverAndress)
     client = mine_grpc_pb2_grpc.apiStub(channel)

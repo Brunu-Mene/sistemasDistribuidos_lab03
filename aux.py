@@ -12,7 +12,7 @@ class challengeArgs:
 def sleepFive(server):
     while True:
         server._printTransactions()
-        time.sleep(5)
+        time.sleep(10)
 
 def lookForAnswer(challenger):
     while True:
@@ -23,3 +23,4 @@ def lookForAnswer(challenger):
 
         if binary_hash[1:challenger+1] == '0' * challenger:
             return solution
+            # return 

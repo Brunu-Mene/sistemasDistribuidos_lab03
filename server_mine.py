@@ -93,9 +93,7 @@ if __name__ == '__main__':
     grpc_server.add_insecure_port('[::]:8080')
     grpc_server.start()
 
-    # ## test
-    # thread_print = threading.Thread(target=aux.sleepFive, args=(server, ))
-    # thread_print.start()
-    # ##
+    thread_print = threading.Thread(target=aux.sleepFive, args=(server, ))
+    thread_print.start()
 
     grpc_server.wait_for_termination()
