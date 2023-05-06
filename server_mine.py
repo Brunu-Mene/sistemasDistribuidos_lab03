@@ -49,16 +49,11 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
         if self._getLocalStatus(transactionId) == -1:
             return mine_grpc_pb2.intResult(result=(-1))
         
+        hash = hashlib.sha1(request.solution.encode('utf-8')).digest()
+        binary_hash = bin(int.from_bytes(hash, byteorder='big'))[2:]
+        print(binary_hash[:10])
 
-        hash_object = hashlib.sha1()
-        hash_object.update(request.solution.encode('utf-8'))
-        hash_str = hash_object.hexdigest()
-        hash_bin = bin(int(hash_str, 16))[2:]
-        nBits = hash_bin[1:self.transactions[transactionId]['challenge']+1]
-
-        print(request.solution)
-        print(nBits)
-        if nBits == '0'* self.transactions[transactionId]['challenge']:
+        if binary_hash[:self.transactions[transactionId]['challenge']]:
             self.transactions[transactionId]['winner'] = request.clientId
             self.transactions[transactionId]['solution'] = request.solution
 

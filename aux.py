@@ -15,16 +15,12 @@ def sleepFive(server):
         time.sleep(5)
 
 def lookForAnswer(challenger):
-    hash_object = hashlib.sha1()
-
     while True:
-        solution = ''.join(random.choices(string.ascii_letters + string.digits, k=15))
+        solution = ''.join(random.choices(string.ascii_letters + string.digits, k=50))
+        hash = hashlib.sha1(solution.encode('utf-8')).digest()
 
-        hash_object.update(solution.encode('utf-8'))
-        hash_str = hash_object.hexdigest()
-        hash_bin = bin(int(hash_str, 16))[2:]
-        nBits = hash_bin[1:challenger+1]
+        binary_hash = bin(int.from_bytes(hash, byteorder='big'))[2:]
 
-        if nBits == '0'* challenger:
-            print(nBits)
+        if binary_hash[:challenger]:
+            print(hash[:10])
             return solution
