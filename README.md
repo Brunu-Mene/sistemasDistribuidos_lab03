@@ -20,6 +20,7 @@ $ python3 client.py [::]:8080
 ---
 ## Link para o vídeo no Drive
 
+> https://drive.google.com/file/d/1FsVUoKMTNmcZCnra4a8NeBoQpfEOSrgd/view
 
 ---
 ## Implementação
