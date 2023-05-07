@@ -66,7 +66,7 @@ def runOperation(client, operation, clientId):
             result = client.submitChallenge(mine_grpc_pb2.challengeArgs(transactionId = int(transactionId), clientId=(clientId), solution=(solution))).result
             print(f"Local Solution: {solution}")
             if result == 1:
-                print(f"Solution worked $$$")
+                print(f"Solution worked! :)")
             elif result == 0:
                 print("Denied Solution by Server! :(")
             elif result == 2:

@@ -80,9 +80,9 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
         return mine_grpc_pb2.structResult(status=(-1), solution=("-1"), challenge=(-1)) 
     
     def _printTransactions(self):
-        print("-------------------------------- Transactions Table --------------------------------")
+        print("--------------------- Transactions Table ---------------------")
         for i in self.transactions:
-            print(f"Challenge: {self.transactions[i]['challenge']} | Solution: {self.transactions[i]['solution']} | Winner: {self.transactions[i]['winner']}")
+            print(f"ID: {i} | Challenge: {self.transactions[i]['challenge']} | Solution: {self.transactions[i]['solution']} | Winner: {self.transactions[i]['winner']}")
         print()
 
 
