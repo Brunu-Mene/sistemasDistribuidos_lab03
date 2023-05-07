@@ -15,12 +15,19 @@ def sleepFive(server):
         time.sleep(10)
 
 def lookForAnswer(challenger):
+    count = 0
+    start = time.time()
     while True:
+        count += 1
+
         solution = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
         hash = hashlib.sha1(solution.encode('utf-8')).digest()
-
         binary_hash = bin(int.from_bytes(hash, byteorder='big'))[2:]
 
         if binary_hash[1:challenger+1] == '0' * challenger:
+            end = time.time()
+            print("binary hash: ", binary_hash)
+            print(count , "tries");
+            print(end-start, "seconds\n")
             return solution
             # return 

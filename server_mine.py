@@ -74,8 +74,9 @@ class MineServer(mine_grpc_pb2_grpc.apiServicer):
         transactionId = request.transactionId
 
         if self._validTrId(transactionId):
-            return mine_grpc_pb2.structResult(status=(self._getLocalStatus(transactionId)), solution=(str(self.transactions[transactionId]['solution'])), challenge=(self.transactions[transactionId]['challenge']))
-        
+            return mine_grpc_pb2.structResult(status=(self._getLocalStatus(transactionId)),
+                                               solution=(str(self.transactions[transactionId]['solution'])),
+                                                challenge=(self.transactions[transactionId]['challenge']))
         return mine_grpc_pb2.structResult(status=(-1), solution=("-1"), challenge=(-1)) 
     
     def _printTransactions(self):
