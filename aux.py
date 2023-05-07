@@ -26,8 +26,7 @@ def lookForAnswer(challenger):
 
         if binary_hash[1:challenger+1] == '0' * challenger:
             end = time.time()
-            print("binary hash: ", binary_hash)
-            print(count , "tries");
+            print(count , "tries")
             print(end-start, "seconds\n")
             return solution
             # return 
